@@ -1,0 +1,47 @@
+@use '../themes/mixins';
+@use '../themes/colors';
+@use 'sass:map';
+
+.builder-zoom {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 2rem;
+    margin: 1rem;
+    border-radius: .3rem;
+
+    text-align: center;
+    line-height: 2rem;
+    padding: 0 .5rem;
+    background-color: mixins.themed('primary');
+    color: mixins.themed('text');
+}
+
+.builder-buttons {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    margin: 1rem;
+
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.builder-button {
+    height: 2rem;
+    line-height: 2rem;
+    text-align: center;
+    padding: 0 .5rem;
+    border-radius: .3rem;
+    cursor: pointer;
+
+    background-color: mixins.themed('button-background');
+    color: mixins.themed('primary');
+    transition: all .2s ease-in-out;
+
+    &.active {
+        background-color: mixins.themed('secondary');
+        color: mixins.themed('primary');
+    }
+}

@@ -8,6 +8,10 @@ interface:
 #########################
 #### GAME PARAMETERS ####
 #########################
+builder:
+  start:
+    zoom: 5
+    center: [ 270845.15,5904541.30 ]
 game:
   score:
     increments:

@@ -9,11 +9,16 @@
 }
 
 .map {
-    @include mixins.themify(colors.$themes) {
-        transition: all .2s ease-in-out;
-        background-color: mixins.themed('primary');
-        color: mixins.themed('text');
-    }
+    transition: all .2s ease-in-out;
+    background-color: mixins.themed('primary');
+    color: mixins.themed('text');
+}
+
+.map-builder {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
 }
 
 .map-game {

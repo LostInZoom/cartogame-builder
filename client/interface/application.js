@@ -1,6 +1,7 @@
 import Page from './page.js';
 import { makeDiv, addSVG, addClass, hasClass, removeClass, wait } from '../utils/dom.js';
 import { GameMap, MenuMap } from '../cartography/map.js';
+import { Builder } from '../cartography/builder.js';
 import { Content, Footer, Header } from './elements.js';
 import { ConsentForm, Form } from './forms.js';
 
@@ -22,9 +23,7 @@ class Application {
         // Create the next page
         this.next = new Page(this, 'next');
 
-        this.done = 0;
-        this.tutodone = true;
-
+        this.builder = new Builder(this, this.current);
     }
 
     title(page) {
