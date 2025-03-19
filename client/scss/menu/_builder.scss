@@ -2,10 +2,33 @@
 @use '../themes/colors';
 @use 'sass:map';
 
+.builder-delete {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 1rem;
+    height: 2.5rem;
+    width: 2.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: mixins.themed('button-background');
+    transition: all .1s ease-in-out;
+
+    & > svg {
+        color: mixins.themed('primary');
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+
+    &.active {
+        background-color: mixins.themed('secondary');
+        transform: scale(1.1, 1.1);
+    }
+}
+
 .builder-zoom {
     position: absolute;
     top: 0;
-    right: 0;
     height: 2rem;
     margin: 1rem;
     border-radius: .3rem;
@@ -24,6 +47,7 @@
     margin: 1rem;
 
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
 }
@@ -38,10 +62,11 @@
 
     background-color: mixins.themed('button-background');
     color: mixins.themed('primary');
-    transition: all .2s ease-in-out;
+    transition: all .1s ease-in-out;
 
     &.active {
         background-color: mixins.themed('secondary');
         color: mixins.themed('primary');
+        transform: scale(1.1, 1.1);
     }
 }
