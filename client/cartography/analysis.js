@@ -53,6 +53,12 @@ function within(position1, position2, distance) {
     else { return true; }
 }
 
+function distance(position1, position2) {
+    let c1 = project('3857', '4326', position1);
+    let c2 = project('3857', '4326', position2);
+    return turf.distance(turf.point(c1), turf.point(c2), { units: "meters" });
+}
+
 /**
  * Project the given coordinates.
  * @param {string} epsg1 - Origin EPSG.
@@ -64,4 +70,4 @@ function project(epsg1, epsg2, coordinates) {
     return proj4(proj4.defs('EPSG:' + epsg1), proj4.defs('EPSG:' + epsg2), coordinates);
 }
 
-export { buffer, middle, within, project }
+export { distance, buffer, middle, within, project }

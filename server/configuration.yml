@@ -12,6 +12,10 @@ builder:
   start:
     zoom: 5
     center: [ 270845.15,5904541.30 ]
+  tolerance:
+    delete:
+      pitfalls: 500
+      bonus: 200
 game:
   score:
     increments:

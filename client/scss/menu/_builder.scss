@@ -59,14 +59,53 @@
     padding: 0 .5rem;
     border-radius: .3rem;
     cursor: pointer;
+    outline-width: 0;
+    outline-style: solid;
 
-    background-color: mixins.themed('button-background');
-    color: mixins.themed('primary');
     transition: all .1s ease-in-out;
+    color: white;
 
     &.active {
-        background-color: mixins.themed('secondary');
-        color: mixins.themed('primary');
         transform: scale(1.1, 1.1);
+    }
+}
+
+#builder-player {
+    background-color: colors.$player;
+    outline-color: colors.$player;
+
+    &.active {
+        outline-width: .2rem;
+        outline-color: white;
+    }
+}
+
+#builder-target {
+    background-color: colors.$target;
+    outline-color: colors.$target;
+
+    &.active {
+        outline-width: .2rem;
+        outline-color: white;
+    }
+}
+
+#builder-pitfalls {
+    background-color: colors.$pitfalls;
+    outline-color: colors.$pitfalls;
+
+    &.active {
+        outline-width: .2rem;
+        outline-color: white;
+    }
+}
+
+#builder-bonus {
+    background-color: colors.$bonus;
+    outline-color: colors.$bonus;
+
+    &.active {
+        outline-width: .2rem;
+        outline-color: white;
     }
 }

@@ -37,8 +37,6 @@ class Application {
         themeButton.addEventListener('click', () => { this.switchTheme(); });
         header.append(themeButton);
 
-
-
         let credits = makeDiv(null, 'credits', 'LostInZoom - ' + new Date().getFullYear());
         footer.append(credits);
 
