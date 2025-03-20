@@ -2,17 +2,18 @@
 @use '../themes/colors';
 @use 'sass:map';
 
-.builder-delete {
+
+.builder-button-round {
     position: absolute;
-    top: 0;
-    left: 0;
     margin: 1rem;
     height: 2.5rem;
     width: 2.5rem;
+
     border-radius: 50%;
     overflow: hidden;
-    background-color: mixins.themed('button-background');
+    background-color: mixins.themed('text');
     transition: all .1s ease-in-out;
+    cursor: pointer;
 
     & > svg {
         color: mixins.themed('primary');
@@ -26,16 +27,95 @@
     }
 }
 
+.builder-clear {
+    top: 0;
+    left: 0;
+}
+
+.builder-delete {
+    top: 3.5rem;
+    left: 0;
+}
+
+.builder-try {
+    top: 0;
+    right: 0;
+
+    transform: scale(1, 1);
+    transition: all .1s ease-in-out;
+    pointer-events: all;
+
+    &.collapse {
+        transform: scale(0, 0);
+        pointer-events: none;
+    }
+}
+
+
 .builder-zoom {
     position: absolute;
     top: 0;
     height: 2rem;
     margin: 1rem;
-    border-radius: .3rem;
+    border-radius: 1rem;
 
     text-align: center;
     line-height: 2rem;
-    padding: 0 .5rem;
+    padding: 0 .8rem;
+    background-color: mixins.themed('text');
+    color: mixins.themed('primary');
+}
+
+.builder-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    pointer-events: none;
+    z-index: 5;
+
+    &.active {
+        pointer-events: all;
+    }
+}
+
+.builder-validate {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .6rem;
+    align-items: center;
+    padding: 1rem;
+    border-radius: .3rem;
+    background-color: mixins.themed('text');
+    color: mixins.themed('primary');
+    z-index: 10;
+    pointer-events: all;
+
+    transform: scale(1, 1);
+    transition: all .1s linear;
+
+    &.collapse {
+        transform: scale(0, 0);
+        pointer-events: none;
+    }
+}
+
+.builder-validate-text {
+    text-align: center;
+}
+
+.builder-validate-buttons {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.builder-validate-button {
+    padding: .3rem .6rem;
+    border-radius: .3rem;
     background-color: mixins.themed('primary');
     color: mixins.themed('text');
 }

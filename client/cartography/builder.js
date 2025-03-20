@@ -8,7 +8,7 @@ import { Point, LineString } from 'ol/geom.js';
 
 import { addClass, addSVG, hasClass, makeDiv, removeClass } from "../utils/dom.js";
 import { Basemap } from "./map.js";
-import { within, distance } from './analysis.js';
+import { distance } from './analysis.js';
 
 class Builder {
     constructor(app, page) {
@@ -60,9 +60,42 @@ class Builder {
             this.zoomindicator.innerHTML = 'Zoom: ' + this.basemap.view.getZoom().toFixed(2);
         });
 
-        this.buttondelete = makeDiv(null, 'builder-delete');
+        this.validatemask = makeDiv(null, 'builder-mask');
+
+        this.validatecontainer = makeDiv(null, 'builder-validate collapse');
+        this.validatetext = makeDiv(null, 'builder-validate-text', 'This will reset the current game.<br>Proceed?');
+        this.validatebuttons = makeDiv(null, 'builder-validate-buttons');
+        this.validaterefuse = makeDiv(null, 'builder-validate-button', 'No');
+        this.validateaccept = makeDiv(null, 'builder-validate-button', 'Yes');
+        this.validatebuttons.append(this.validaterefuse, this.validateaccept);
+        this.validatecontainer.append(this.validatetext, this.validatebuttons);
+        this.page.container.append(this.validatemask, this.validatecontainer);
+
+        this.validateaccept.addEventListener('click', () => {
+            this.clear();
+            removeClass(this.validatemask, 'active');
+            addClass(this.validatecontainer, 'collapse');
+        });
+
+        this.validaterefuse.addEventListener('click', () => {
+            removeClass(this.validatemask, 'active');
+            addClass(this.validatecontainer, 'collapse');
+        });
+
+        this.buttonclear = makeDiv(null, 'builder-clear builder-button-round');
+        addSVG(this.buttonclear, new URL('../img/clear.svg', import.meta.url));
+        this.page.container.append(this.buttonclear);
+
+        this.buttondelete = makeDiv(null, 'builder-delete builder-button-round');
         addSVG(this.buttondelete, new URL('../img/trash.svg', import.meta.url));
         this.page.container.append(this.buttondelete);
+
+        this.buttonclear.addEventListener('click', (e) => {
+            if (this.containsElements()) {
+                addClass(this.validatemask, 'active');
+                removeClass(this.validatecontainer, 'collapse');
+            }
+        });
 
         this.buttondelete.addEventListener('click', (e) => {
             if (hasClass(this.buttondelete, 'active')) {
@@ -73,6 +106,10 @@ class Builder {
                 this.delete = true;
             }
         });
+
+        this.buttontry = makeDiv(null, 'builder-try builder-button-round collapse', 'Play');
+        addSVG(this.buttontry, new URL('../img/play.svg', import.meta.url));
+        this.page.container.append(this.buttontry);
 
         this.buttoncontainer = makeDiv(null, 'builder-buttons');
         this.buttonplayer = makeDiv('builder-player', 'builder-button', 'Player start');
@@ -101,7 +138,7 @@ class Builder {
                     this.basemap.setPlayer(coordinates);
                     this.player = coordinates;
                 }
-                
+                this.handleTry();
             }
             else if (this.mode === 'target') {
                 if (this.delete) {
@@ -111,6 +148,7 @@ class Builder {
                     this.basemap.setTarget(coordinates);
                     this.target = coordinates;
                 }
+                this.handleTry();
             }
             else if (this.mode === 'pitfalls') {
                 if (this.delete) {
@@ -169,8 +207,8 @@ class Builder {
     removeClosestFeature(coordinates, layer, tolerance) {
         let s = this.basemap.layers.getLayer(layer).getSource();
         let sa = this.basemap.layers.getLayer(layer + 'Area').getSource();
-        let index, mindist, feature, featureArea;
 
+        let index, mindist, feature, featureArea;
         s.getFeatures().forEach((element, i) => {
             let geom = element.getGeometry();
             if(geom !== undefined) {
@@ -194,8 +232,60 @@ class Builder {
             }
         })
 
-        if (feature !== undefined) { s.removeFeature(feature); }
-        if (featureArea !== undefined) { sa.removeFeature(featureArea); }
+        if (feature !== undefined) {
+            s.removeFeature(feature);
+            this[layer].splice(index, 1);
+        }
+        if (featureArea !== undefined) {
+            sa.removeFeature(featureArea);
+        }
+    }
+
+    clear() {
+        this.basemap.layers.setGeometry('player', null);
+        this.player = undefined;
+        this.basemap.layers.setGeometry('target', null);
+        this.target = undefined;
+
+        let b = this.basemap.layers.getLayer('bonus').getSource();
+        let ba = this.basemap.layers.getLayer('bonusArea').getSource();
+        b.getFeatures().forEach((element) => {
+            b.removeFeature(element);
+
+        })
+        ba.getFeatures().forEach((element) => {
+            ba.removeFeature(element);
+        })
+        let p = this.basemap.layers.getLayer('pitfalls').getSource();
+        let pa = this.basemap.layers.getLayer('pitfallsArea').getSource();
+        p.getFeatures().forEach((element) => {
+            p.removeFeature(element);
+        })
+        pa.getFeatures().forEach((element) => {
+            pa.removeFeature(element);
+        })
+        this.bonus = [];
+        this.pitfalls = [];
+    }
+
+    handleTry() {
+        if (hasClass(this.buttontry, 'collapse')) {
+            if (this.player !== undefined && this.target !== undefined) {
+                removeClass(this.buttontry, 'collapse');
+            }
+        } else {
+            if (this.player === undefined || this.target === undefined) {
+                addClass(this.buttontry, 'collapse');
+            }
+        }
+    }
+
+    containsElements() {
+        if (this.player !== undefined) { return true; }
+        if (this.target !== undefined) { return true; }
+        if (this.pitfalls.length > 0) { return true; }
+        if (this.bonus.length > 0) { return true; }
+        return false;
     }
 }
 
