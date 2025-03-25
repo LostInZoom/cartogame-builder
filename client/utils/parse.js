@@ -18,4 +18,14 @@ function getColorsByClassNames(...className) {
     return colors;
 }
 
-export { getColorsByClassNames }
+function isJSON(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
+
+export { getColorsByClassNames, isJSON }

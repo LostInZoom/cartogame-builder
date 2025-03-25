@@ -140,8 +140,18 @@ function wait(duration, callback) {
     setTimeout(callback, duration);
 };
 
+function downloadJSON(obj, filename){
+    var str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 2));
+    var node = document.createElement('a');
+    node.setAttribute("href", str);
+    node.setAttribute("download", filename + ".json");
+    document.body.appendChild(node);
+    node.click();
+    node.remove();
+}
+
 export {
     makeDiv, hasClass, addClass, removeClass, addClassList, removeClassList,
     activate, deactivate,
-    clearElement, addSVG, getCSSColors, remove, wait
+    clearElement, addSVG, getCSSColors, remove, wait, downloadJSON
 }

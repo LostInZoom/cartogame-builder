@@ -1,14 +1,7 @@
-import Map from 'ol/Map.js';
-import View from 'ol/View.js';
-import { MapLayers } from './layers.js';
-import { defaults as defaultInteractions } from 'ol/interaction/defaults.js';
-import { Feature } from 'ol';
-import Collection from 'ol/Collection.js';
-import { Point, LineString } from 'ol/geom.js';
-
-import { addClass, addSVG, hasClass, makeDiv, removeClass } from "../utils/dom.js";
+import { addClass, addSVG, downloadJSON, hasClass, makeDiv, removeClass, wait } from "../utils/dom.js";
 import { Basemap } from "./map.js";
 import { distance } from './analysis.js';
+import { isJSON } from "../utils/parse.js";
 
 class Builder {
     constructor(app, page) {
@@ -21,7 +14,11 @@ class Builder {
         this.target;
         this.pitfalls = [];
         this.bonus = [];
+        this.hints = {};
+    }
 
+    initialize(callback) {
+        callback = callback || function () {};
         let zoom = this.app.params.builder.start.zoom;
 
         this.basemap = new Basemap(this.page);
@@ -53,33 +50,63 @@ class Builder {
         this.basemap.map.addLayer(this.basemap.layers.getLayer('bonus'));
         this.basemap.map.addLayer(this.basemap.layers.getLayer('bonusArea'));
 
+        this.dragindicator = makeDiv(null, 'builder-drag-indicator', 'Drop a valid JSON file to load a game');
+        this.page.container.append(this.dragindicator);
+
+        let self = this;
+        this.page.container.addEventListener('dragenter', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            addClass(this.dragindicator, 'active');
+        })
+        this.page.container.addEventListener('dragleave', (e) => {
+            removeClass(this.dragindicator, 'active');
+        })
+        this.page.container.addEventListener('dragover', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        })
+
+        this.page.container.addEventListener('drop', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            let files = e.dataTransfer.files
+            let reader = new FileReader();
+            reader.onloadend = function(f) {
+                if (!isJSON(this.result)) { self.popup('This file is not a valid JSON file.') }
+                else {
+                    let result = JSON.parse(this.result);
+                    if (('player' in result === false) || ('target' in result === false)) {
+                        self.popup('The provided game must contains a player start and a target.')
+                    } else {
+                        if (self.containsElements()) {
+                            self.validation('This will clear the current game and load the new data.<br>Proceed?', (erase) => {
+                                if (erase) {
+                                    self.clear();
+                                    self.handleTry();
+                                    self.loadGame(result);
+                                }
+                            })
+                        } else {
+                            self.loadGame(result);
+                        }
+                    }
+                }
+            };
+
+            if (files[0] !== undefined) {
+                reader.readAsText(files[0]);
+            }
+
+            removeClass(this.dragindicator, 'active');
+        })
+
         this.zoomindicator = makeDiv(null, 'builder-zoom', 'Zoom: ' + zoom.toFixed(2));
         this.page.container.append(this.zoomindicator);
 
-        this.basemap.map.on('moveend', (e) => {
+        this.basemap.map.on('postrender', (e) => {
             this.zoomindicator.innerHTML = 'Zoom: ' + this.basemap.view.getZoom().toFixed(2);
-        });
-
-        this.validatemask = makeDiv(null, 'builder-mask');
-
-        this.validatecontainer = makeDiv(null, 'builder-validate collapse');
-        this.validatetext = makeDiv(null, 'builder-validate-text', 'This will reset the current game.<br>Proceed?');
-        this.validatebuttons = makeDiv(null, 'builder-validate-buttons');
-        this.validaterefuse = makeDiv(null, 'builder-validate-button', 'No');
-        this.validateaccept = makeDiv(null, 'builder-validate-button', 'Yes');
-        this.validatebuttons.append(this.validaterefuse, this.validateaccept);
-        this.validatecontainer.append(this.validatetext, this.validatebuttons);
-        this.page.container.append(this.validatemask, this.validatecontainer);
-
-        this.validateaccept.addEventListener('click', () => {
-            this.clear();
-            removeClass(this.validatemask, 'active');
-            addClass(this.validatecontainer, 'collapse');
-        });
-
-        this.validaterefuse.addEventListener('click', () => {
-            removeClass(this.validatemask, 'active');
-            addClass(this.validatecontainer, 'collapse');
         });
 
         this.buttonclear = makeDiv(null, 'builder-clear builder-button-round');
@@ -92,8 +119,12 @@ class Builder {
 
         this.buttonclear.addEventListener('click', (e) => {
             if (this.containsElements()) {
-                addClass(this.validatemask, 'active');
-                removeClass(this.validatecontainer, 'collapse');
+                this.validation('This will clear the current game.<br>Proceed?', (erase) => {
+                    if (erase) {
+                        this.clear();
+                        this.handleTry();
+                    }
+                })
             }
         });
 
@@ -107,9 +138,53 @@ class Builder {
             }
         });
 
-        this.buttontry = makeDiv(null, 'builder-try builder-button-round collapse', 'Play');
+        this.buttontry = makeDiv(null, 'builder-try builder-button-round collapse');
         addSVG(this.buttontry, new URL('../img/play.svg', import.meta.url));
         this.page.container.append(this.buttontry);
+
+        this.buttontry.addEventListener('click', () => {
+            let game = {
+                start: {
+                    zoom: 5,
+                    center: [ 270845.15, 5904541.30 ]
+                },
+                player: this.player,
+                target: this.target,
+                hints: this.hints,
+                pitfalls: this.pitfalls,
+                bonus: this.bonus
+            }
+            callback(game);
+        });
+
+        this.buttondownload = makeDiv(null, 'builder-download builder-button-round collapse');
+        addSVG(this.buttondownload, new URL('../img/download.svg', import.meta.url));
+        this.page.container.append(this.buttondownload);
+
+        this.buttondownload.addEventListener('click', () => {
+            let game = {
+                start: {
+                    zoom: 5,
+                    center: [ 270845.15, 5904541.30 ]
+                },
+                player: this.player,
+                target: this.target,
+                hints: this.hints,
+                pitfalls: this.pitfalls,
+                bonus: this.bonus
+            }
+            downloadJSON(game, 'game');
+        });
+
+        this.hintcontainer = makeDiv(null, 'builder-hint-container');
+        this.hintselements = makeDiv(null, 'builder-hints')
+        this.buttonhint = makeDiv(null, 'builder-hint-add');
+        addSVG(this.buttonhint, new URL('../img/hint.svg', import.meta.url));
+
+        this.hintcontainer.append(this.buttonhint, this.hintselements);
+        this.page.container.append(this.hintcontainer);
+
+        this.buttonhint.addEventListener('click', () => { this.createHint(); });
 
         this.buttoncontainer = makeDiv(null, 'builder-buttons');
         this.buttonplayer = makeDiv('builder-player', 'builder-button', 'Player start');
@@ -241,6 +316,22 @@ class Builder {
         }
     }
 
+    loadGame(game) {
+        this.basemap.setPlayer(game.player);
+        this.player = game.player;
+        this.basemap.setTarget(game.target);
+        this.target = game.target;
+
+        game.pitfalls.forEach((v) => { this.addPitfall(v); })
+        game.bonus.forEach((v) => { this.addBonus(v); })
+
+        for (let [zoom, hint] of Object.entries(game.hints)) {
+            this.loadHint(zoom, hint);
+        }
+        
+        this.handleTry();
+    }
+
     clear() {
         this.basemap.layers.setGeometry('player', null);
         this.player = undefined;
@@ -264,6 +355,7 @@ class Builder {
         pa.getFeatures().forEach((element) => {
             pa.removeFeature(element);
         })
+
         this.bonus = [];
         this.pitfalls = [];
     }
@@ -272,10 +364,12 @@ class Builder {
         if (hasClass(this.buttontry, 'collapse')) {
             if (this.player !== undefined && this.target !== undefined) {
                 removeClass(this.buttontry, 'collapse');
+                removeClass(this.buttondownload, 'collapse');
             }
         } else {
             if (this.player === undefined || this.target === undefined) {
                 addClass(this.buttontry, 'collapse');
+                addClass(this.buttondownload, 'collapse');
             }
         }
     }
@@ -286,6 +380,156 @@ class Builder {
         if (this.pitfalls.length > 0) { return true; }
         if (this.bonus.length > 0) { return true; }
         return false;
+    }
+
+    modifyHint(zoom, container) {
+        let text = this.hints[zoom];
+        let mask = makeDiv(null, 'builder-mask active');
+        let modifycontainer = makeDiv(null, 'builder-modify-container collapse');
+        let modifylabel = makeDiv(null, 'builder-modify-label', `
+                Hint to be displayed after zoom ${zoom}:
+            `)
+        let input = makeDiv(null, 'builder-modify-input', text);
+        input.setAttribute('contenteditable', true);
+        let buttons = makeDiv(null, 'builder-modify-buttons');
+        let validate = makeDiv(null, 'builder-modify-button', 'Validate');
+        let cancel = makeDiv(null, 'builder-modify-button', 'Cancel');
+        let remove = makeDiv(null, 'builder-modify-button', 'Delete');
+        buttons.append(cancel, validate, remove);
+        modifycontainer.append(modifylabel, input, buttons);
+
+        this.page.container.append(mask, modifycontainer);
+
+        wait(20, () => {
+            removeClass(modifycontainer, 'collapse');
+            input.selectionStart = input.selectionEnd = input.innerHTML.length - 1;
+            input.focus();
+
+            cancel.addEventListener('click', () => {
+                addClass(modifycontainer, 'collapse');
+                mask.remove();
+            });
+            validate.addEventListener('click', () => {
+                let str = input.innerHTML;
+                this.hints[zoom] = str.replace(/\s+$/, '').replace('<br>', '');
+                addClass(modifycontainer, 'collapse');
+                mask.remove();
+            });
+            remove.addEventListener('click', () => {
+                delete this.hints[zoom];
+                addClass(modifycontainer, 'collapse');
+                addClass(container, 'collapse');
+                mask.remove();
+                wait(100, () => {
+                    container.remove();
+                });
+            });
+        });
+    }
+
+    createHint() {
+        let zoom = Math.round(this.basemap.view.getZoom());
+        let already = false;
+        for (let key in this.hints) { if (parseInt(key) === parseInt(zoom)) { already = true; break; } }
+        if (!already) {
+            let hint = makeDiv(null, 'builder-hint-level collapse', zoom);
+            hint.setAttribute('value', zoom);
+            let before;
+            for (let i = 0; i < this.hintselements.children.length; ++i) {
+                if (parseInt(this.hintselements.children[i].getAttribute('value')) < zoom) {
+                    before = this.hintselements.children[i];
+                    break;
+                }
+            }
+            if (before !== undefined) { this.hintselements.insertBefore(hint, before); }
+            else { this.hintselements.append(hint); }
+            wait(10, () => { removeClass(hint, 'collapse'); });
+            this.hints[zoom] = '';
+
+            hint.addEventListener('click', () => {
+                this.modifyHint(zoom, hint);
+            });
+
+            this.modifyHint(zoom, hint);
+        }  
+    }
+
+    loadHint(zoom, hint) {
+        let h = makeDiv(null, 'builder-hint-level collapse', zoom);
+        h.setAttribute('value', zoom);
+        let before;
+        for (let i = 0; i < this.hintselements.children.length; ++i) {
+            if (parseInt(this.hintselements.children[i].getAttribute('value')) < zoom) {
+                before = this.hintselements.children[i];
+                break;
+            }
+        }
+        if (before !== undefined) { this.hintselements.insertBefore(h, before); }
+        else { this.hintselements.append(h); }
+        wait(10, () => { removeClass(h, 'collapse'); });
+
+        this.hints[zoom] = hint;
+
+        h.addEventListener('click', () => {
+            this.modifyHint(zoom, h);
+        });
+    }
+
+    popup(text, callback) {
+        callback = callback || function () {};
+        let validatemask = makeDiv(null, 'builder-mask');
+        let validatecontainer = makeDiv(null, 'builder-validate collapse');
+        let validatetext = makeDiv(null, 'builder-validate-text', text);
+        let validatebuttons = makeDiv(null, 'builder-validate-buttons');
+        let validateaccept = makeDiv(null, 'builder-validate-button', 'OK');
+        validatebuttons.append(validateaccept);
+        validatecontainer.append(validatetext, validatebuttons);
+        this.page.container.append(validatemask, validatecontainer);
+        wait(20, () => { removeClass(validatecontainer, 'collapse'); })
+        validateaccept.addEventListener('click', () => {
+            removeClass(validatemask, 'active');
+            addClass(validatecontainer, 'collapse');
+            wait(100, () => {
+                validatemask.remove();
+                validatecontainer.remove();
+                callback();
+            })            
+        });
+    }
+
+    validation(text, callback) {
+        callback = callback || function () {};
+        let validatemask = makeDiv(null, 'builder-mask');
+        let validatecontainer = makeDiv(null, 'builder-validate collapse');
+        let validatetext = makeDiv(null, 'builder-validate-text', text);
+        let validatebuttons = makeDiv(null, 'builder-validate-buttons');
+        let validaterefuse = makeDiv(null, 'builder-validate-button', 'No');
+        let validateaccept = makeDiv(null, 'builder-validate-button', 'Yes');
+        validatebuttons.append(validaterefuse, validateaccept);
+        validatecontainer.append(validatetext, validatebuttons);
+        this.page.container.append(validatemask, validatecontainer);
+
+        wait(20, () => { removeClass(validatecontainer, 'collapse'); })
+
+        validateaccept.addEventListener('click', () => {
+            removeClass(validatemask, 'active');
+            addClass(validatecontainer, 'collapse');
+            wait(100, () => {
+                validatemask.remove();
+                validatecontainer.remove();
+                callback(true);
+            })            
+        });
+
+        validaterefuse.addEventListener('click', () => {
+            removeClass(validatemask, 'active');
+            addClass(validatecontainer, 'collapse');
+            wait(100, () => {
+                validatemask.remove();
+                validatecontainer.remove();
+                callback(false);
+            })
+        });
     }
 }
 

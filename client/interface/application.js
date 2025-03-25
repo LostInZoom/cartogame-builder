@@ -24,7 +24,133 @@ class Application {
         this.next = new Page(this, 'next');
 
         this.builder = new Builder(this, this.current);
+        this.builder.initialize((game) => {
+            if (!this.sliding) {
+                this.choice(this.next, game);
+                this.slideNext(() => {
+                    this.next = new Page(this, 'next');
+                });
+            }
+        });
     }
+
+    choice(page, game) {
+        let phase1 = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Hint phase only');
+        let phase2 = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Navigation phase only');
+        let both = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Standard game');
+        page.container.append(phase1, phase2, both);
+
+        phase1.addEventListener('click', () => {
+            if (!this.sliding) {
+                this.phase1(this.next, game);
+                this.slideNext(() => {
+                    this.next = new Page(this, 'next');
+                });
+            }
+        });
+
+        phase2.addEventListener('click', () => {
+            if (!this.sliding) {
+                this.phase2(this.next, game);
+                this.slideNext(() => {
+                    this.next = new Page(this, 'next');
+                });
+            }
+        });
+
+        both.addEventListener('click', () => {
+            if (!this.sliding) {
+                this.both(this.next, game);
+                this.slideNext(() => {
+                    this.next = new Page(this, 'next');
+                });
+            }
+        });
+    }
+
+    phase1(page, game) {
+        let gamemap = new GameMap(page, game);
+        gamemap.phase1(() => {
+            this.choice(this.previous, game);
+            this.slidePrevious(() => {
+                this.previous = new Page(this, 'previous');
+            });
+        });
+    }
+
+    phase2(page, game) {
+        let gamemap = new GameMap(page, game);
+        gamemap.phase2(() => {
+            this.choice(this.previous, game);
+            this.slidePrevious(() => {
+                this.previous = new Page(this, 'previous');
+            });
+        });
+    }
+
+    both(page, game) {
+        let gamemap = new GameMap(page, game);
+        gamemap.phase1(() => {
+            gamemap.phase2((stats) => {
+                this.endGame(this.next, game, stats);
+                this.slideNext(() => {
+                    this.next = new Page(this, 'next');
+                });
+            });
+        });
+    }
+
+    endGame(page, game, stats) {
+        let content = new Content(page);
+        let congrats = makeDiv(null, 'game-congratulations', 'Congratulations!');
+
+        let scorecontainer = makeDiv(null, 'game-score-container ' + this.params.interface.theme)
+        let statistics = makeDiv(null, 'game-statistics ' + this.params.interface.theme);
+
+        let scorelabel = makeDiv(null, 'game-score-label', 'Your score:');
+        let score = makeDiv(null, 'game-score-value', stats.score);
+
+        let distance = makeDiv(null, 'game-statistics-container');
+        let distancelabel = makeDiv(null, 'game-statistics-label', 'Distance travelled');
+        let distancevalue = makeDiv(null, 'game-statistics-value', Math.floor(stats.distance/1000) + ' km');
+        distance.append(distancelabel, distancevalue);
+
+        let pitfalls = makeDiv(null, 'game-statistics-container');
+        let pitfallslabel = makeDiv(null, 'game-statistics-label', 'Pitfalls encountered');
+        let pitfallsvalue = makeDiv(null, 'game-statistics-value', stats.pitfalls);
+        pitfalls.append(pitfallslabel, pitfallsvalue);
+
+        let bonus = makeDiv(null, 'game-statistics-container');
+        let bonuslabel = makeDiv(null, 'game-statistics-label', 'Bonus found');
+        let bonusvalue = makeDiv(null, 'game-statistics-value', stats.bonus);
+        bonus.append(bonuslabel, bonusvalue);
+
+        scorecontainer.append(scorelabel, score);
+        statistics.append(distance, pitfalls, bonus);
+
+        let continueButton = makeDiv(null, 'button-menu button ' + this.params.interface.theme, "Got it!");
+        page.themed.push(continueButton);
+
+        content.append(congrats, scorecontainer, statistics, continueButton);
+
+        continueButton.addEventListener('click', () => {
+            if (!this.sliding) {
+                this.choice(this.previous, game);
+                this.slidePrevious(() => {
+                    this.previous = new Page(this, 'previous');
+                });
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
 
     title(page) {
         let header = new Header(page);
@@ -247,17 +373,17 @@ class Application {
         });
     }
 
-    phase1(page) {
-        let gamemap = new GameMap(page, this.params.tutorial);
-        gamemap.phase1(() => {
-            if (!this.sliding) {
-                this.tutorial2(this.next);
-                this.slideNext(() => {
-                    this.next = new Page(this, 'next');
-                });
-            }
-        });
-    }
+    // phase1(page) {
+    //     let gamemap = new GameMap(page, this.params.tutorial);
+    //     gamemap.phase1(() => {
+    //         if (!this.sliding) {
+    //             this.tutorial2(this.next);
+    //             this.slideNext(() => {
+    //                 this.next = new Page(this, 'next');
+    //             });
+    //         }
+    //     });
+    // }
 
     tutorial2(page) {
         addClass(page.container, 'tutorial');
@@ -383,59 +509,18 @@ class Application {
         menumap.setZoom(menumap.getZoomForData(30));
     }
 
-    phase2(page) {
-        let options = this.params.tutorial
-        let gamemap = new GameMap(page, options);
-        gamemap.phase2((stats) => {
-            this.endGame(this.next, stats);
-            this.slideNext(() => {
-                this.next = new Page(this, 'next');
-            });
-        });
-    }
+    // phase2(page) {
+    //     let options = this.params.tutorial
+    //     let gamemap = new GameMap(page, options);
+    //     gamemap.phase2((stats) => {
+    //         this.endGame(this.next, stats);
+    //         this.slideNext(() => {
+    //             this.next = new Page(this, 'next');
+    //         });
+    //     });
+    // }
 
-    endGame(page, stats) {
-        let content = new Content(page);
-        let congrats = makeDiv(null, 'game-congratulations', 'Congratulations!');
-
-        let scorecontainer = makeDiv(null, 'game-score-container ' + this.params.interface.theme)
-        let statistics = makeDiv(null, 'game-statistics ' + this.params.interface.theme);
-
-        let scorelabel = makeDiv(null, 'game-score-label', 'Your score:');
-        let score = makeDiv(null, 'game-score-value', stats.score);
-
-        let distance = makeDiv(null, 'game-statistics-container');
-        let distancelabel = makeDiv(null, 'game-statistics-label', 'Distance travelled');
-        let distancevalue = makeDiv(null, 'game-statistics-value', Math.floor(stats.distance/1000) + ' km');
-        distance.append(distancelabel, distancevalue);
-
-        let pitfalls = makeDiv(null, 'game-statistics-container');
-        let pitfallslabel = makeDiv(null, 'game-statistics-label', 'Pitfalls encountered');
-        let pitfallsvalue = makeDiv(null, 'game-statistics-value', stats.pitfalls);
-        pitfalls.append(pitfallslabel, pitfallsvalue);
-
-        let bonus = makeDiv(null, 'game-statistics-container');
-        let bonuslabel = makeDiv(null, 'game-statistics-label', 'Bonus found');
-        let bonusvalue = makeDiv(null, 'game-statistics-value', stats.bonus);
-        bonus.append(bonuslabel, bonusvalue);
-
-        scorecontainer.append(scorelabel, score);
-        statistics.append(distance, pitfalls, bonus);
-
-        let continueButton = makeDiv(null, 'button-menu button ' + this.params.interface.theme, "Got it!");
-        page.themed.push(continueButton);
-
-        content.append(congrats, scorecontainer, statistics, continueButton);
-
-        continueButton.addEventListener('click', () => {
-            if (!this.sliding) {
-                this.levels(this.next);
-                this.slideNext(() => {
-                    this.next = new Page(this, 'next');
-                });
-            }
-        });
-    }
+    
 
     startGame(page, index) {
         let options = this.params.levels[index]
