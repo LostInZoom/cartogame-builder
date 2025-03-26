@@ -1,5 +1,5 @@
 {
-  "name": "cartogame",
+  "name": "cartogame-builder",
   "version": "1.0.0",
   "description": "A game about cartographic navigation.",
   "author": "jberli",
@@ -7,10 +7,10 @@
   "source": "index.js",
   "type": "module",
   "scripts": {
-    "build-watch": "parcel watch ./client/index.html --public-url /cartogame --dist-dir dist/cartogame",
+    "build-watch": "parcel watch ./client/index.html --public-url /cartogame-builder --dist-dir dist/cartogame-builder",
     "start-watch": "nodemon ./server/index.js",
     "dev": "concurrently --kill-others \"npm run start-watch\" \"npm run build-watch\"",
-    "build": "parcel build ./client/index.html --public-url /cartogame --dist-dir dist/cartogame",
+    "build": "parcel build ./client/index.html --public-url /cartogame-builder --dist-dir dist/cartogame-builder",
     "start": "npm run build && node server/index.js",
     "deploy": "node server/index.js"
   },

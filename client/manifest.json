@@ -1,7 +1,7 @@
 {
-    "name": "Cartogame",
-    "short_name": "cartogame",
-    "description": "A game about cartogaphic navigation.",
+    "name": "Cartogame Builder",
+    "short_name": "cartogame-builder",
+    "description": "Build games for Cartogame.",
     "icons": [
         {
         "src": "./img/cartogame-512x512.png",
