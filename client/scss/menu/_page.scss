@@ -28,6 +28,17 @@
     &.next {
         transform: translateX(100%);
     }
+
+    // @include mixins.themify(colors.$themes) {
+    //     transition: all .2s ease-in-out;
+    //     background-color: mixins.themed('text');
+    //     color: mixins.themed('primary');
+
+    //     &.inactive {
+    //         transition: all .2s ease-in-out;
+    //         background-color: mixins.themed('inactive');
+    //     }
+    // }
 }
 
 .banner {
@@ -56,7 +67,11 @@
 }
 
 .header {
-
+    @include mixins.themify(colors.$themes) {
+        transition: all .2s ease-in-out;
+        background-color: mixins.themed('text');
+        color: mixins.themed('primary');
+    }
 }
 
 .footer {
@@ -106,6 +121,12 @@
 
     &.right {
         align-items: start;
+    }
+
+    @include mixins.themify(colors.$themes) {
+        transition: all .2s ease-in-out;
+        background-color: mixins.themed('text');
+        color: mixins.themed('primary');
     }
 }
 

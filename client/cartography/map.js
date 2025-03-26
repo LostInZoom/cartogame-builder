@@ -124,6 +124,7 @@ class Basemap {
     }
 
     fit(padding, transition, callback) {
+        callback = callback || function () {};
         let extent = this.getExtentForData();
         this.map.getView().fit(extent, {
             padding: [ padding, padding, padding, padding ],

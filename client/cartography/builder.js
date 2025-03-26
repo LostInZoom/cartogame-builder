@@ -17,7 +17,7 @@ class Builder {
         this.hints = {};
     }
 
-    initialize(callback) {
+    initialize(game, callback) {
         callback = callback || function () {};
         let zoom = this.app.params.builder.start.zoom;
 
@@ -25,8 +25,6 @@ class Builder {
         this.basemap.type = 'builder';
         this.basemap.interactable = true;
         this.basemap.initialize();
-        this.basemap.setCenter(this.app.params.builder.start.center);
-        this.basemap.setZoom(this.app.params.builder.start.zoom);
 
         this.basemap.layers.add('player', 50);
         this.basemap.layers.add('target', 51);
@@ -49,6 +47,9 @@ class Builder {
         this.basemap.map.addLayer(this.basemap.layers.getLayer('pitfallsArea'));
         this.basemap.map.addLayer(this.basemap.layers.getLayer('bonus'));
         this.basemap.map.addLayer(this.basemap.layers.getLayer('bonusArea'));
+
+        this.basemap.setCenter(this.app.params.builder.start.center);
+        this.basemap.setZoom(this.app.params.builder.start.zoom);
 
         this.dragindicator = makeDiv(null, 'builder-drag-indicator', 'Drop a valid JSON file to load a game');
         this.page.container.append(this.dragindicator);
@@ -84,7 +85,6 @@ class Builder {
                             self.validation('This will clear the current game and load the new data.<br>Proceed?', (erase) => {
                                 if (erase) {
                                     self.clear();
-                                    self.handleTry();
                                     self.loadGame(result);
                                 }
                             })
@@ -202,6 +202,10 @@ class Builder {
         this.buttontarget.addEventListener('click', this.switchMode.bind(this));
         this.buttonpitfalls.addEventListener('click', this.switchMode.bind(this));
         this.buttonbonus.addEventListener('click', this.switchMode.bind(this));
+
+        if (game !== null) {
+            this.loadGame(game);
+        }
 
         this.basemap.map.on('click', (e) => {
             let coordinates = this.basemap.map.getEventCoordinate(event);
@@ -330,6 +334,7 @@ class Builder {
         }
         
         this.handleTry();
+        this.basemap.fit(50, 500);
     }
 
     clear() {
@@ -342,7 +347,6 @@ class Builder {
         let ba = this.basemap.layers.getLayer('bonusArea').getSource();
         b.getFeatures().forEach((element) => {
             b.removeFeature(element);
-
         })
         ba.getFeatures().forEach((element) => {
             ba.removeFeature(element);
@@ -356,8 +360,14 @@ class Builder {
             pa.removeFeature(element);
         })
 
+        Array.from(this.hintselements.children).forEach((element) => {
+            addClass(element, 'collapse');
+            wait(100, () => { element.remove(); })
+        })
+
         this.bonus = [];
         this.pitfalls = [];
+        this.hints = {}
     }
 
     handleTry() {
@@ -379,6 +389,11 @@ class Builder {
         if (this.target !== undefined) { return true; }
         if (this.pitfalls.length > 0) { return true; }
         if (this.bonus.length > 0) { return true; }
+        let empty = true;
+        for (const k in this.hints) { empty = false }
+        if (!empty) {
+            if (this.hints.keys().length > 0) { return true; }
+        }
         return false;
     }
 

@@ -23,10 +23,14 @@ class Application {
         // Create the next page
         this.next = new Page(this, 'next');
 
-        this.builder = new Builder(this, this.current);
-        this.builder.initialize((game) => {
+        this.builder(null, this.current);
+    }
+
+    builder(game, page) {
+        let builder = new Builder(this, page);
+        builder.initialize(game, (g) => {
             if (!this.sliding) {
-                this.choice(this.next, game);
+                this.choice(this.next, g);
                 this.slideNext(() => {
                     this.next = new Page(this, 'next');
                 });
@@ -35,10 +39,24 @@ class Application {
     }
 
     choice(page, game) {
+        let header = new Header(page);
+        let backButton = makeDiv(null, 'button-back button-menu button ' + this.params.interface.theme, 'Game creation');
+        header.append(backButton);
+
+        backButton.addEventListener('click', () => {
+            if (!this.sliding) {
+                this.builder(game, this.previous);
+                this.slidePrevious(() => {
+                    this.previous = new Page(this, 'previous');
+                });
+            }
+        });
+
+        let content = new Content(page);
         let phase1 = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Hint phase only');
         let phase2 = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Navigation phase only');
         let both = makeDiv(null, 'button-menu button ' + this.params.interface.theme, 'Standard game');
-        page.container.append(phase1, phase2, both);
+        content.append(phase1, phase2, both);
 
         phase1.addEventListener('click', () => {
             if (!this.sliding) {
