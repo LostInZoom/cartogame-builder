@@ -8,9 +8,10 @@ Hints are used during the first phase of the game where you need to find the pla
 the global map of France at zoom level 5.
 
 Some tips to generate a game:
-- Your **first hint must start a zoom level 5** (the zoom level where the game will start)
-- Add hints when the **basemap changes** (new toponyms appear, relief becomes visible, etc.)
+- Your **first hint must start a zoom level 5** (the zoom level where the game will start).
+- Add hints when the **basemap changes** (new toponyms appear, relief becomes visible, etc.).
 - Pitfalls and bonuses have an **area of influence** only visible at a certain zoom level, keep that in mind when placing them.
+- You can drag and drop a JSON file from your computer and open it in the builder.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/LostInZoom/cartogame-builder/refs/heads/main/readme-description.png" alt="Readme description"/>
